@@ -4,19 +4,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.util.Pair;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 import android.widget.ProgressBar;
-import com.example.Jokes;
+
 import com.example.madhuri.myapplication.backend.myApi.MyApi;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.InterstitialAd;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
@@ -24,22 +19,22 @@ import com.google.api.client.googleapis.services.GoogleClientRequestInitializer;
 import com.capstone.androidlibrary.JokeActivity;
 
 import java.io.IOException;
-import java.net.URL;
 
 
 public class MainActivity extends AppCompatActivity {
 
     static final String EXTRA_JOKE_STRING = "joke";
     String testJokeString =  null;
-    private ProgressBar progressBar;
+    private ProgressBar mProgressBar;
+    private JokesAsyncTask mJokesAsyncTask = null;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        progressBar = (ProgressBar)findViewById(R.id.progressBar1);
-        progressBar.setVisibility(View.GONE);
+        mProgressBar = (ProgressBar)findViewById(R.id.progressBar1);
+        mProgressBar.setVisibility(View.GONE);
     }
 
     @Override
@@ -66,20 +61,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void tellJoke(View view) {
-        new JokesAsyncTask().execute();
+        createJokesAsyncTask(mProgressBar);
+        executeJokesAsyncTask();
     }
-    class JokesAsyncTask extends AsyncTask<Void, Void, String> {
+
+    public JokesAsyncTask createJokesAsyncTask(ProgressBar progressBar) {
+        mJokesAsyncTask = new JokesAsyncTask(getApplicationContext(), progressBar);
+        return mJokesAsyncTask;
+    }
+    public void executeJokesAsyncTask() {
+        if (mJokesAsyncTask != null )
+            mJokesAsyncTask.execute();
+    }
+
+
+
+    class JokesAsyncTask extends AsyncTask<Pair<Context, String>, Void, String> {
         private  MyApi myApiService = null;
-        private Context context;
+        private Context mContext;
+        private ProgressBar mActivityProgressBar = null;
+
+        public JokesAsyncTask(Context context, ProgressBar progressBar) {
+            this.mContext = context;
+            this.mActivityProgressBar = progressBar;
+        }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressBar.setVisibility(View.VISIBLE);
+            if (mActivityProgressBar !=null)
+                mActivityProgressBar.setVisibility(View.VISIBLE);
 
         }
         @Override
-        protected String doInBackground(Void... params) {
+        protected String doInBackground(Pair<Context, String>... params) {
             if(myApiService == null) {  // Only do this once
                 MyApi.Builder builder = new MyApi.Builder(AndroidHttp.newCompatibleTransport(),
                         new AndroidJsonFactory(), null)
@@ -110,7 +125,8 @@ public class MainActivity extends AppCompatActivity {
             testJokeString = result;
             intent.putExtra(EXTRA_JOKE_STRING,result);
             startActivity(intent);
-            progressBar.setVisibility(View.GONE);
+            if (mActivityProgressBar != null)
+                mActivityProgressBar.setVisibility(View.GONE);
 
         }
     }

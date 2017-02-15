@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     String testJokeString =  null;
     InterstitialAd interstitialAd = null;
     private ProgressBar progressBar;
+    JokesAsyncTask mJokesAsyncTask = null;
 
 
     @Override
@@ -50,8 +51,8 @@ public class MainActivity extends AppCompatActivity {
         interstitialAd.setAdListener(new AdListener() {
             @Override
             public void onAdClosed() {
-
-                new JokesAsyncTask().execute();
+                createJokesAsyncTask(progressBar);
+                executeJokesAsyncTask();
             }
         });
     }
@@ -95,14 +96,31 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-    class JokesAsyncTask extends AsyncTask<Void, Void, String> {
+
+    public JokesAsyncTask createJokesAsyncTask(ProgressBar progressBar) {
+        mJokesAsyncTask = new JokesAsyncTask(getApplicationContext(), progressBar);
+        return mJokesAsyncTask;
+    }
+    public void executeJokesAsyncTask() {
+        if (mJokesAsyncTask != null )
+            mJokesAsyncTask.execute();
+    }
+
+    public class JokesAsyncTask extends AsyncTask<Void, Void, String> {
         private  MyApi myApiService = null;
-        private Context context;
+        private Context mContext;
+        private ProgressBar mActivityProgressBar = null;
+
+        public JokesAsyncTask(Context context, ProgressBar progressBar) {
+            this.mContext = context;
+            this.mActivityProgressBar = progressBar;
+        }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressBar.setVisibility(View.VISIBLE);
+            if (mActivityProgressBar != null)
+                mActivityProgressBar.setVisibility(View.VISIBLE);
 
         }
 
@@ -138,7 +156,8 @@ public class MainActivity extends AppCompatActivity {
             testJokeString = result;
             intent.putExtra(EXTRA_JOKE_STRING,result);
             startActivity(intent);
-            progressBar.setVisibility(View.GONE);
+            if ( mActivityProgressBar != null)
+                mActivityProgressBar.setVisibility(View.GONE);
 
         }
     }

@@ -17,3 +17,15 @@ allprojects {
         jcenter()
     }
 }
+task myTask (dependsOn: [":backend:appengineRun",
+                              ":app:connectedAndroidTest",
+                              ':backend:appengineStop']) {
+    project(":backend").afterEvaluate { backend ->
+        backend.extensions.appengine.daemon = true
+    }
+    group "Udacity test task"
+    description "Run backend server and execute test cases"
+    doLast {
+        println 'myTask completed'
+    }
+}
